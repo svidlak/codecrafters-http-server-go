@@ -82,7 +82,10 @@ func (s *Server) readLoop(conn net.Conn) {
 	case strings.HasPrefix(incomingMessage.Url, "/echo/"):
 		result := strings.Split(incomingMessage.Url, "/echo/")[1]
 		s.writeTextResponse(conn, 200, result)
-	case strings.HasPrefix(incomingMessage.Url, "/files"):
+	case strings.HasPrefix(incomingMessage.Url, "/files") && incomingMessage.Method == "POST":
+		fileName := strings.Split(incomingMessage.Url, "/files/")[1]
+		s.saveFileResponse(conn, 201, fileName)
+	case strings.HasPrefix(incomingMessage.Url, "/files") && incomingMessage.Method == "GET":
 		fileName := strings.Split(incomingMessage.Url, "/files/")[1]
 		s.writeFileResponse(conn, 200, fileName)
 	case strings.HasPrefix(incomingMessage.Url, "/user-agent"):
@@ -95,17 +98,21 @@ func (s *Server) readLoop(conn net.Conn) {
 	}
 }
 
+func (s *Server) saveFileResponse(conn net.Conn, status int, fileName string) {
+	fileNamePath := "/" + dirFlag + "/" + fileName
+	//err := os.WriteFile(fileNamePath, d1, 0644)
+	s.writeTextResponse(conn, status, fileNamePath)
+}
 func (s *Server) writeFileResponse(conn net.Conn, status int, fileName string) {
-	fileContent, _ := os.ReadFile("/" + dirFlag + "/" + fileName)
-	if len(string(fileContent)) == 0 {
+	fileContent, err := os.ReadFile("/" + dirFlag + "/" + fileName)
+	if len(string(fileContent)) == 0 && err != nil {
 		status = 404
 	}
+
 	response := fmt.Sprintf("HTTP/1.1 %d \r\n", status)
 	response += "Content-Type: application/octet-stream\r\n"
-
 	response += fmt.Sprintf("Content-Length: %d\r\n\r\n", len(fileContent))
 	response += string(fileContent)
-
 	conn.Write([]byte(response))
 }
 
