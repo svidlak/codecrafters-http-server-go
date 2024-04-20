@@ -77,21 +77,29 @@ func (s *Server) readLoop(conn net.Conn) {
 	switch {
 	case strings.HasPrefix(incomingMessage.Url, "/echo/"):
 		result := strings.Split(incomingMessage.Url, "/echo/")[1]
-		s.writeResponse(conn, 200, result)
+		s.writeTextResponse(conn, 200, result)
 	case strings.HasPrefix(incomingMessage.Url, "/files"):
 		result := incomingMessage.Headers["User-Agent"]
-		s.writeResponse(conn, 200, result)
+		s.writeFileResponse(conn, 200, result)
 	case strings.HasPrefix(incomingMessage.Url, "/user-agent"):
 		result := incomingMessage.Headers["User-Agent"]
-		s.writeResponse(conn, 200, result)
+		s.writeTextResponse(conn, 200, result)
 	case incomingMessage.Url == "/":
-		s.writeResponse(conn, 200, "")
+		s.writeTextResponse(conn, 200, "")
 	default:
-		s.writeResponse(conn, 404, "")
+		s.writeTextResponse(conn, 404, "")
 	}
 }
 
-func (s *Server) writeResponse(conn net.Conn, status int, body string) {
+func (s *Server) writeFileResponse(conn net.Conn, status int, body string) {
+	response := fmt.Sprintf("HTTP/1.1 %d \r\n", status)
+	response += "Content-Type: application/octet-stream\r\n"
+	response += fmt.Sprintf("Content-Length: %d\r\n\r\n", len(body))
+	response += body
+	conn.Write([]byte(response))
+}
+
+func (s *Server) writeTextResponse(conn net.Conn, status int, body string) {
 	response := fmt.Sprintf("HTTP/1.1 %d \r\n", status)
 	response += "Content-Type: text/plain\r\n"
 	response += fmt.Sprintf("Content-Length: %d\r\n\r\n", len(body))
