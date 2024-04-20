@@ -96,10 +96,12 @@ func (s *Server) readLoop(conn net.Conn) {
 }
 
 func (s *Server) writeFileResponse(conn net.Conn, status int, fileName string) {
+	fileContent, _ := os.ReadFile("/" + dirFlag + "/" + fileName)
+	if len(string(fileContent)) == 0 {
+		status = 404
+	}
 	response := fmt.Sprintf("HTTP/1.1 %d \r\n", status)
 	response += "Content-Type: application/octet-stream\r\n"
-
-	fileContent, _ := os.ReadFile("/" + dirFlag + "/" + fileName)
 
 	response += fmt.Sprintf("Content-Length: %d\r\n\r\n", len(fileContent))
 	response += string(fileContent)
