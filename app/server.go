@@ -68,42 +68,35 @@ func (s *Server) readLoop(conn net.Conn) {
 
 	msg := buf[:n]
 	incomingMessage, err := parseIncomingMessage(msg)
+
 	if err != nil {
 		conn.Write([]byte("HTTP/1.1 500\r\n\r\n"))
 		return
 	}
 
-	if strings.HasPrefix(incomingMessage.Url, "/echo/") {
+	switch {
+	case strings.HasPrefix(incomingMessage.Url, "/echo/"):
 		result := strings.Split(incomingMessage.Url, "/echo/")[1]
-		response := "HTTP/1.1 200 OK\r\n"
-		response += "Content-Type: text/plain\r\n"
-		response += fmt.Sprintf("Content-Length: %d\r\n\r\n", len(result))
-		response += result
-		conn.Write([]byte(response))
-		return
+		s.writeResponse(conn, 200, result)
+	case strings.HasPrefix(incomingMessage.Url, "/files"):
+		result := incomingMessage.Headers["User-Agent"]
+		s.writeResponse(conn, 200, result)
+	case strings.HasPrefix(incomingMessage.Url, "/user-agent"):
+		result := incomingMessage.Headers["User-Agent"]
+		s.writeResponse(conn, 200, result)
+	case incomingMessage.Url == "/":
+		s.writeResponse(conn, 200, "")
+	default:
+		s.writeResponse(conn, 500, "")
 	}
+}
 
-	if strings.HasPrefix(incomingMessage.Url, "/user-agent") {
-
-		result, ok := incomingMessage.Headers["User-Agent"]
-		if !ok {
-			conn.Write([]byte("HTTP/1.1 500"))
-			return
-		}
-		response := "HTTP/1.1 200 OK\r\n"
-		response += "Content-Type: text/plain\r\n"
-		response += fmt.Sprintf("Content-Length: %d\r\n\r\n", len(result))
-		response += result
-		conn.Write([]byte(response))
-		return
-	}
-
-	if incomingMessage.Url != "/" {
-		conn.Write([]byte("HTTP/1.1 404\r\n\r\n"))
-		return
-	}
-
-	conn.Write([]byte("HTTP/1.1 200\r\n\r\n"))
+func (s *Server) writeResponse(conn net.Conn, status int, body string) {
+	response := fmt.Sprint("HTTP/1.1 %d \r\n", status)
+	response += "Content-Type: text/plain\r\n"
+	response += fmt.Sprintf("Content-Length: %d\r\n\r\n", len(body))
+	response += body
+	conn.Write([]byte(response))
 }
 
 func parseIncomingMessage(message []byte) (IncomingMessage, error) {
