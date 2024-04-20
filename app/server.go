@@ -73,6 +73,16 @@ func (s *Server) readLoop(conn net.Conn) {
 		return
 	}
 
+	if strings.HasPrefix(incomingMessage.Url, "/echo/") {
+		result := strings.Split(incomingMessage.Url, "/echo/")[1]
+		response := "HTTP/1.1 200 OK\r\n"
+		response += "Content-Type: text/plain\r\n"
+		response += fmt.Sprintf("Content-Length: %d\r\n\r\n", len(result))
+		response += result
+		conn.Write([]byte(response))
+		return
+	}
+
 	if incomingMessage.Url != "/" {
 		conn.Write([]byte("HTTP/1.1 404\r\n\r\n"))
 		return
