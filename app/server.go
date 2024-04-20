@@ -92,7 +92,7 @@ func (s *Server) readLoop(conn net.Conn) {
 }
 
 func (s *Server) writeResponse(conn net.Conn, status int, body string) {
-	response := fmt.Sprint("HTTP/1.1 %d \r\n", status)
+	response := fmt.Sprintf("HTTP/1.1 %d \r\n", status)
 	response += "Content-Type: text/plain\r\n"
 	response += fmt.Sprintf("Content-Length: %d\r\n\r\n", len(body))
 	response += body
