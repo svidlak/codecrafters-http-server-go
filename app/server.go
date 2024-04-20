@@ -87,7 +87,7 @@ func (s *Server) readLoop(conn net.Conn) {
 	case incomingMessage.Url == "/":
 		s.writeResponse(conn, 200, "")
 	default:
-		s.writeResponse(conn, 500, "")
+		s.writeResponse(conn, 404, "")
 	}
 }
 
