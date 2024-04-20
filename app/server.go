@@ -2,9 +2,11 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"strings"
 )
 
@@ -79,8 +81,8 @@ func (s *Server) readLoop(conn net.Conn) {
 		result := strings.Split(incomingMessage.Url, "/echo/")[1]
 		s.writeTextResponse(conn, 200, result)
 	case strings.HasPrefix(incomingMessage.Url, "/files"):
-		result := incomingMessage.Headers["User-Agent"]
-		s.writeFileResponse(conn, 200, result)
+		fileName := strings.Split(incomingMessage.Url, "/files/")[1]
+		s.writeFileResponse(conn, 200, fileName)
 	case strings.HasPrefix(incomingMessage.Url, "/user-agent"):
 		result := incomingMessage.Headers["User-Agent"]
 		s.writeTextResponse(conn, 200, result)
@@ -91,11 +93,30 @@ func (s *Server) readLoop(conn net.Conn) {
 	}
 }
 
-func (s *Server) writeFileResponse(conn net.Conn, status int, body string) {
+func (s *Server) writeFileResponse(conn net.Conn, status int, fileName string) {
+	var dirFlag string
 	response := fmt.Sprintf("HTTP/1.1 %d \r\n", status)
 	response += "Content-Type: application/octet-stream\r\n"
-	response += fmt.Sprintf("Content-Length: %d\r\n\r\n", len(body))
-	response += body
+
+	flag.StringVar(&dirFlag, "directory", "", "")
+	flag.Parse()
+
+	if len(dirFlag) == 0 {
+		conn.Write([]byte(response))
+		return
+	}
+
+	fileContent, err := os.ReadFile("/" + dirFlag + "/" + fileName)
+
+	if err != nil {
+		conn.Write([]byte(response))
+		return
+	}
+
+	fmt.Println(dirFlag)
+	response += fmt.Sprintf("Content-Length: %d\r\n\r\n", len(fileContent))
+	response += string(fileContent)
+
 	conn.Write([]byte(response))
 }
 
