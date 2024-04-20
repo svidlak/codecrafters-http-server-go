@@ -84,6 +84,7 @@ func (s *Server) readLoop(conn net.Conn) {
 	}
 
 	if strings.HasPrefix(incomingMessage.Url, "/user-agent") {
+
 		result, ok := incomingMessage.Headers["User-Agent"]
 		if !ok {
 			conn.Write([]byte("HTTP/1.1 500"))
