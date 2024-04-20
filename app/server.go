@@ -18,6 +18,7 @@ type Server struct {
 }
 
 type IncomingMessage struct {
+	Body    string
 	Method  string
 	Url     string
 	Headers map[string]string
@@ -84,7 +85,7 @@ func (s *Server) readLoop(conn net.Conn) {
 		s.writeTextResponse(conn, 200, result)
 	case strings.HasPrefix(incomingMessage.Url, "/files") && incomingMessage.Method == "POST":
 		fileName := strings.Split(incomingMessage.Url, "/files/")[1]
-		s.saveFileResponse(conn, 201, fileName)
+		s.saveFileResponse(conn, 201, fileName, incomingMessage.Body)
 	case strings.HasPrefix(incomingMessage.Url, "/files") && incomingMessage.Method == "GET":
 		fileName := strings.Split(incomingMessage.Url, "/files/")[1]
 		s.writeFileResponse(conn, 200, fileName)
@@ -98,10 +99,17 @@ func (s *Server) readLoop(conn net.Conn) {
 	}
 }
 
-func (s *Server) saveFileResponse(conn net.Conn, status int, fileName string) {
+func (s *Server) saveFileResponse(conn net.Conn, status int, fileName string, fileBody string) {
 	fileNamePath := "/" + dirFlag + "/" + fileName
-	//err := os.WriteFile(fileNamePath, d1, 0644)
-	s.writeTextResponse(conn, status, fileNamePath)
+	err := os.WriteFile(fileNamePath, []byte(fileBody), 0644)
+	if err != nil {
+		status = 500
+	}
+	response := fmt.Sprintf("HTTP/1.1 %d \r\n", status)
+	response += "Content-Type: application/octet-stream\r\n"
+	response += fmt.Sprintf("Content-Length: %d\r\n\r\n", len(fileBody))
+	response += string(fileBody)
+	conn.Write([]byte(response))
 }
 func (s *Server) writeFileResponse(conn net.Conn, status int, fileName string) {
 	fileContent, err := os.ReadFile("/" + dirFlag + "/" + fileName)
@@ -155,6 +163,8 @@ func parseIncomingMessage(message []byte) (IncomingMessage, error) {
 			key := strings.TrimSpace(headerLine[0])
 			value := strings.TrimSpace(headerLine[1])
 			incomingMessage.Headers[key] = value
+		} else {
+			incomingMessage.Body = line
 		}
 	}
 	return incomingMessage, nil
