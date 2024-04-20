@@ -101,19 +101,18 @@ func (s *Server) writeFileResponse(conn net.Conn, status int, fileName string) {
 	flag.StringVar(&dirFlag, "directory", "", "")
 	flag.Parse()
 
-	if len(dirFlag) == 0 {
-		conn.Write([]byte(response))
-		return
-	}
+	//if len(dirFlag) == 0 {
+	//	conn.Write([]byte(response))
+	//	return
+	//}
+	//
+	fileContent, _ := os.ReadFile("/" + dirFlag + "/" + fileName)
 
-	fileContent, err := os.ReadFile("/" + dirFlag + "/" + fileName)
-
-	if err != nil {
-		conn.Write([]byte(response))
-		return
-	}
-
-	fmt.Println(dirFlag)
+	//if err != nil {
+	//	conn.Write([]byte(response))
+	//	return
+	//}
+	//
 	response += fmt.Sprintf("Content-Length: %d\r\n\r\n", len(fileContent))
 	response += string(fileContent)
 
