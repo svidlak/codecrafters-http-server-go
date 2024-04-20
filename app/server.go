@@ -23,6 +23,8 @@ type IncomingMessage struct {
 	Headers map[string]string
 }
 
+var dirFlag string
+
 func NewServer(listenAddr string) *Server {
 	return &Server{
 		listenAddr: listenAddr,
@@ -94,25 +96,11 @@ func (s *Server) readLoop(conn net.Conn) {
 }
 
 func (s *Server) writeFileResponse(conn net.Conn, status int, fileName string) {
-	var dirFlag string
 	response := fmt.Sprintf("HTTP/1.1 %d \r\n", status)
 	response += "Content-Type: application/octet-stream\r\n"
 
-	flag.StringVar(&dirFlag, "directory", "", "")
-	flag.Parse()
-
-	//if len(dirFlag) == 0 {
-	//	conn.Write([]byte(response))
-	//	return
-	//}
-	//
 	fileContent, _ := os.ReadFile("/" + dirFlag + "/" + fileName)
 
-	//if err != nil {
-	//	conn.Write([]byte(response))
-	//	return
-	//}
-	//
 	response += fmt.Sprintf("Content-Length: %d\r\n\r\n", len(fileContent))
 	response += string(fileContent)
 
@@ -164,6 +152,10 @@ func parseIncomingMessage(message []byte) (IncomingMessage, error) {
 }
 
 func main() {
+
+	flag.StringVar(&dirFlag, "directory", "", "")
+	flag.Parse()
+
 	server := NewServer(":4221")
 	fmt.Println("server startred on port:", server.listenAddr)
 
