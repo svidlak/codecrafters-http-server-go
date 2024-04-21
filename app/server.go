@@ -111,6 +111,7 @@ func (s *Server) saveFileResponse(conn net.Conn, status int, fileName string, fi
 	response += string(fileBody)
 	conn.Write([]byte(response))
 }
+
 func (s *Server) writeFileResponse(conn net.Conn, status int, fileName string) {
 	fileContent, err := os.ReadFile("/" + dirFlag + "/" + fileName)
 	if len(string(fileContent)) == 0 && err != nil {
@@ -171,7 +172,6 @@ func parseIncomingMessage(message []byte) (IncomingMessage, error) {
 }
 
 func main() {
-
 	flag.StringVar(&dirFlag, "directory", "", "")
 	flag.Parse()
 
